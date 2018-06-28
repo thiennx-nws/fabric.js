@@ -4,10 +4,11 @@
     var fs = global.fs;
     _pixelMatch = global.pixelmatch;
   }
-  var fabricCanvas = this.canvas = new fabric.Canvas(null, {enableRetinaScaling: false, renderOnAddRemove: false});
+  fabric.Object.prototype.objectCaching = false;
+  var fabricCanvas = this.canvas = new fabric.Canvas(null, {enableRetinaScaling: false, renderOnAddRemove: false });
   var pixelmatchOptions = {
-    includeAA: true,
-    threshold: 0.1
+    includeAA: false,
+    threshold: 0.095
   };
 
   function getAbsolutePath(path) {
