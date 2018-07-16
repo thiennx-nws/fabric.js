@@ -467,6 +467,76 @@
       }
       return this;
     },
+    applyFiltersLateVersion: function(callback, filters, imgElement, forResizing) {
+      filters = filters || this.filters;
+      imgElement = imgElement || this._originalElement;
+
+      if (!imgElement) {
+        return;
+      }
+
+      var replacement = fabric.util.createImage(),
+          retinaScaling = this.canvas ? this.canvas.getRetinaScaling() : fabric.devicePixelRatio,
+          minimumScale = this.minimumScaleTrigger / retinaScaling,
+          _this = this, scaleX, scaleY;
+
+      if (filters.length === 0) {
+        this._element = imgElement;
+        callback && callback(this);
+        return imgElement;
+      }
+
+      var canvasEl = fabric.util.createCanvasElement();
+      canvasEl.width = imgElement.width;
+      canvasEl.height = imgElement.height;
+      canvasEl.getContext('2d').drawImage(imgElement, 0, 0, imgElement.width, imgElement.height);
+
+      filters.forEach(function(filter) {
+        if (!filter) {
+          return;
+        }
+        if (forResizing) {
+          scaleX = _this.scaleX < minimumScale ? _this.scaleX : 1;
+          scaleY = _this.scaleY < minimumScale ? _this.scaleY : 1;
+          if (scaleX * retinaScaling < 1) {
+            scaleX *= retinaScaling;
+          }
+          if (scaleY * retinaScaling < 1) {
+            scaleY *= retinaScaling;
+          }
+        }
+        else {
+          scaleX = filter.scaleX;
+          scaleY = filter.scaleY;
+        }
+        filter.applyTo(canvasEl, scaleX, scaleY);
+        if (!forResizing && filter.type === 'Resize') {
+          _this.width *= filter.scaleX;
+          _this.height *= filter.scaleY;
+        }
+      });
+
+      /** @ignore */
+      replacement.width = canvasEl.width;
+      replacement.height = canvasEl.height;
+      if (fabric.isLikelyNode) {
+        replacement.src = canvasEl.toBuffer(undefined, fabric.Image.pngCompression);
+        // onload doesn't fire in some node versions, so we invoke callback manually
+        _this._element = replacement;
+        !forResizing && (_this._filteredEl = replacement);
+        callback && callback(_this);
+      }
+      else {
+        replacement.onload = function() {
+          _this._element = replacement;
+          !forResizing && (_this._filteredEl = replacement);
+          callback && callback(_this);
+          replacement.onload = canvasEl = null;
+        };
+        replacement.src = canvasEl.toDataURL('image/png');
+      }
+      return canvasEl;
+    },
 
     /**
      * @private
