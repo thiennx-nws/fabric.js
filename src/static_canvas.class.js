@@ -42,6 +42,7 @@
       options || (options = { });
 
       this._initStatic(el, options);
+      this.renderAndResetBound = this.renderAndReset.bind(this);
     },
 
     /**
@@ -595,7 +596,7 @@
       this.calcOffset();
 
       if (!options.cssOnly) {
-        this.renderAll();
+        this.requestRenderAll();
       }
 
       return this;
@@ -672,7 +673,7 @@
         activeGroup.setCoords(ignoreVpt, skipAbsolute);
       }
       this.calcViewportBoundaries();
-      this.renderAll();
+      this.requestRenderAll();
       return this;
     },
 
@@ -799,7 +800,7 @@
       }
       this.clearContext(this.contextContainer);
       this.fire('canvas:cleared');
-      this.renderAll();
+      this.requestRenderAll();
       return this;
     },
 
@@ -812,6 +813,19 @@
       var canvasToDrawOn = this.contextContainer;
       this.renderCanvas(canvasToDrawOn, this._objects);
       return this;
+    },
+
+    renderAndReset: function() {
+      this.renderAll();
+      this.isRendering = false;
+    },
+
+    requestRenderAll: function() {
+      if(!this.isRendering) {
+        this.isRendering = true;
+        fabric.util.requestRenderAll(this.renderAndResetBound)
+      }
+      return this
     },
 
     /**
@@ -1027,7 +1041,7 @@
      */
     _centerObject: function(object, center) {
       object.setPositionByOrigin(center, 'center', 'center');
-      this.renderAll();
+      this.requestRenderAll();
       return this;
     },
 
@@ -1420,7 +1434,7 @@
         removeFromArray(this._objects, object);
         this._objects.unshift(object);
       }
-      return this.renderAll && this.renderAll();
+      return this.requestRenderAll();
     },
 
     /**
@@ -1448,7 +1462,7 @@
         removeFromArray(this._objects, object);
         this._objects.push(object);
       }
-      return this.renderAll && this.renderAll();
+      return this.requestRenderAll();
     },
 
     /**
@@ -1488,8 +1502,7 @@
           this._objects.splice(newIdx, 0, object);
         }
       }
-      this.renderAll && this.renderAll();
-      return this;
+      return this.requestRenderAll();
     },
 
     /**
@@ -1558,8 +1571,7 @@
           this._objects.splice(newIdx, 0, object);
         }
       }
-      this.renderAll && this.renderAll();
-      return this;
+      return this.requestRenderAll();
     },
 
     /**
@@ -1601,7 +1613,7 @@
     moveTo: function (object, index) {
       removeFromArray(this._objects, object);
       this._objects.splice(index, 0, object);
-      return this.renderAll && this.renderAll();
+      return this.requestRenderAll();
     },
 
     /**

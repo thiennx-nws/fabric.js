@@ -2221,7 +2221,7 @@ fabric.Collection = {
         this._onObjectAdded(arguments[i]);
       }
     }
-    this.renderOnAddRemove && this.renderAll();
+    this.renderOnAddRemove && this.requestRenderAll();
     return this;
   },
 
@@ -2246,7 +2246,7 @@ fabric.Collection = {
       objects.splice(index, 0, object);
     }
     this._onObjectAdded && this._onObjectAdded(object);
-    this.renderOnAddRemove && this.renderAll();
+    this.renderOnAddRemove && this.requestRenderAll();
     return this;
   },
 
@@ -2271,7 +2271,7 @@ fabric.Collection = {
       }
     }
 
-    this.renderOnAddRemove && somethingRemoved && this.renderAll();
+    this.renderOnAddRemove && somethingRemoved && this.requestRenderAll();
     return this;
   },
 
@@ -8218,6 +8218,7 @@ fabric.ElementsParser.prototype.checkIfDone = function() {
       options || (options = { });
 
       this._initStatic(el, options);
+      this.renderAndResetBound = this.renderAndReset.bind(this);
     },
 
     /**
@@ -8771,7 +8772,7 @@ fabric.ElementsParser.prototype.checkIfDone = function() {
       this.calcOffset();
 
       if (!options.cssOnly) {
-        this.renderAll();
+        this.requestRenderAll();
       }
 
       return this;
@@ -8848,7 +8849,7 @@ fabric.ElementsParser.prototype.checkIfDone = function() {
         activeGroup.setCoords(ignoreVpt, skipAbsolute);
       }
       this.calcViewportBoundaries();
-      this.renderAll();
+      this.requestRenderAll();
       return this;
     },
 
@@ -8975,7 +8976,7 @@ fabric.ElementsParser.prototype.checkIfDone = function() {
       }
       this.clearContext(this.contextContainer);
       this.fire('canvas:cleared');
-      this.renderAll();
+      this.requestRenderAll();
       return this;
     },
 
@@ -8988,6 +8989,19 @@ fabric.ElementsParser.prototype.checkIfDone = function() {
       var canvasToDrawOn = this.contextContainer;
       this.renderCanvas(canvasToDrawOn, this._objects);
       return this;
+    },
+
+    renderAndReset: function() {
+      this.renderAll();
+      this.isRendering = false;
+    },
+
+    requestRenderAll: function() {
+      if(!this.isRendering) {
+        this.isRendering = true;
+        fabric.util.requestRenderAll(this.renderAndResetBound)
+      }
+      return this
     },
 
     /**
@@ -9203,7 +9217,7 @@ fabric.ElementsParser.prototype.checkIfDone = function() {
      */
     _centerObject: function(object, center) {
       object.setPositionByOrigin(center, 'center', 'center');
-      this.renderAll();
+      this.requestRenderAll();
       return this;
     },
 
@@ -9596,7 +9610,7 @@ fabric.ElementsParser.prototype.checkIfDone = function() {
         removeFromArray(this._objects, object);
         this._objects.unshift(object);
       }
-      return this.renderAll && this.renderAll();
+      return this.requestRenderAll();
     },
 
     /**
@@ -9624,7 +9638,7 @@ fabric.ElementsParser.prototype.checkIfDone = function() {
         removeFromArray(this._objects, object);
         this._objects.push(object);
       }
-      return this.renderAll && this.renderAll();
+      return this.requestRenderAll();
     },
 
     /**
@@ -9664,8 +9678,7 @@ fabric.ElementsParser.prototype.checkIfDone = function() {
           this._objects.splice(newIdx, 0, object);
         }
       }
-      this.renderAll && this.renderAll();
-      return this;
+      return this.requestRenderAll();
     },
 
     /**
@@ -9734,8 +9747,7 @@ fabric.ElementsParser.prototype.checkIfDone = function() {
           this._objects.splice(newIdx, 0, object);
         }
       }
-      this.renderAll && this.renderAll();
-      return this;
+      return this.requestRenderAll();
     },
 
     /**
@@ -9777,7 +9789,7 @@ fabric.ElementsParser.prototype.checkIfDone = function() {
     moveTo: function (object, index) {
       removeFromArray(this._objects, object);
       this._objects.splice(index, 0, object);
-      return this.renderAll && this.renderAll();
+      return this.requestRenderAll();
     },
 
     /**
@@ -10210,7 +10222,7 @@ fabric.BaseBrush = fabric.util.createClass(/** @lends fabric.BaseBrush.prototype
         // rendered inconsistently across browsers
         // Firefox 4, for example, renders a dot,
         // whereas Chrome 10 renders nothing
-        this.canvas.renderAll();
+        this.canvas.requestRenderAll();
         return;
       }
 
@@ -10221,7 +10233,7 @@ fabric.BaseBrush = fabric.util.createClass(/** @lends fabric.BaseBrush.prototype
 
       this.canvas.clearContext(this.canvas.contextTop);
       this._resetShadow();
-      this.canvas.renderAll();
+      this.canvas.requestRenderAll();
 
       // fire event 'path' created
       this.canvas.fire('path:created', { path: path });
@@ -10324,7 +10336,7 @@ fabric.CircleBrush = fabric.util.createClass(fabric.BaseBrush, /** @lends fabric
     this.canvas.clearContext(this.canvas.contextTop);
     this._resetShadow();
     this.canvas.renderOnAddRemove = originalRenderOnAddRemove;
-    this.canvas.renderAll();
+    this.canvas.requestRenderAll();
   },
 
   /**
@@ -10473,7 +10485,7 @@ fabric.SprayBrush = fabric.util.createClass( fabric.BaseBrush, /** @lends fabric
     this.canvas.clearContext(this.canvas.contextTop);
     this._resetShadow();
     this.canvas.renderOnAddRemove = originalRenderOnAddRemove;
-    this.canvas.renderAll();
+    this.canvas.requestRenderAll();
   },
 
   /**
@@ -10666,7 +10678,7 @@ fabric.PatternBrush = fabric.util.createClass(fabric.PencilBrush, /** @lends fab
      */
     initialize: function(el, options) {
       options || (options = { });
-
+      this.renderAndResetBound = this.renderAndReset.bind(this);
       this._initStatic(el, options);
       this._initInteractive();
       this._createCacheCanvas();
@@ -12020,7 +12032,7 @@ fabric.PatternBrush = fabric.util.createClass(fabric.PencilBrush, /** @lends fab
       this._setActiveObject(object);
       this.fire('object:selected', { target: object, e: e });
       object.fire('selected', { e: e });
-      this.renderAll();
+      this.requestRenderAll();
       return this;
     },
 
@@ -12706,7 +12718,7 @@ fabric.PatternBrush = fabric.util.createClass(fabric.PencilBrush, /** @lends fab
       this._setCursorFromEvent(e, target);
       this._handleEvent(e, 'up', target ? target : null, LEFT_CLICK, isClick);
       target && (target.__corner = 0);
-      shouldRender && this.renderAll();
+      shouldRender && this.requestRenderAll();
     },
 
     /**
@@ -12786,7 +12798,7 @@ fabric.PatternBrush = fabric.util.createClass(fabric.PencilBrush, /** @lends fab
      */
     _onMouseDownInDrawingMode: function(e) {
       this._isCurrentlyDrawing = true;
-      this.discardActiveObject(e).renderAll();
+      this.discardActiveObject(e).requestRenderAll();
       if (this.clipTo) {
         fabric.util.clipContext(this, this.contextTop);
       }
@@ -12897,8 +12909,8 @@ fabric.PatternBrush = fabric.util.createClass(fabric.PencilBrush, /** @lends fab
         }
       }
       this._handleEvent(e, 'down', target ? target : null);
-      // we must renderAll so that we update the visuals
-      shouldRender && this.renderAll();
+      // we must requestRenderAll so that we update the visuals
+      shouldRender && this.requestRenderAll();
     },
 
     /**
@@ -13020,7 +13032,7 @@ fabric.PatternBrush = fabric.util.createClass(fabric.PencilBrush, /** @lends fab
       this._beforeScaleTransform(e, transform);
       this._performTransformAction(e, transform, pointer);
 
-      transform.actionPerformed && this.renderAll();
+      transform.actionPerformed && this.requestRenderAll();
     },
 
     /**
@@ -13310,7 +13322,7 @@ fabric.PatternBrush = fabric.util.createClass(fabric.PencilBrush, /** @lends fab
         this.setActiveGroup(group, e);
         group.saveCoords();
         this.fire('selection:created', { target: group, e: e });
-        this.renderAll();
+        this.requestRenderAll();
       }
     },
 
@@ -13535,9 +13547,9 @@ fabric.util.object.extend(fabric.StaticCanvas.prototype, /** @lends fabric.Stati
    * @tutorial {@link http://fabricjs.com/fabric-intro-part-3#deserialization}
    * @see {@link http://jsfiddle.net/fabricjs/fmgXt/|jsFiddle demo}
    * @example <caption>loadFromJSON</caption>
-   * canvas.loadFromJSON(json, canvas.renderAll.bind(canvas));
+   * canvas.loadFromJSON(json, canvas.requestRenderAll.bind(canvas));
    * @example <caption>loadFromJSON with reviver</caption>
-   * canvas.loadFromJSON(json, canvas.renderAll.bind(canvas), function(o, object) {
+   * canvas.loadFromJSON(json, canvas.requestRenderAll.bind(canvas), function(o, object) {
    *   // `o` = json object
    *   // `object` = fabric.Object instance
    *   // ... do some stuff ...
@@ -13577,7 +13589,7 @@ fabric.util.object.extend(fabric.StaticCanvas.prototype, /** @lends fabric.Stati
         // create the Object instance. Here the Canvas is
         // already an instance and we are just loading things over it
         _this._setOptions(serialized);
-        _this.renderAll();
+        _this.requestRenderAll();
         callback && callback();
       });
     }, reviver);
@@ -13715,7 +13727,7 @@ fabric.util.object.extend(fabric.StaticCanvas.prototype, /** @lends fabric.Stati
     clone.clipTo = this.clipTo;
     if (this.backgroundImage) {
       clone.setBackgroundImage(this.backgroundImage.src, function() {
-        clone.renderAll();
+        clone.requestRenderAll();
         callback && callback(clone);
       });
       clone.backgroundImageOpacity = this.backgroundImageOpacity;
@@ -13794,7 +13806,7 @@ fabric.util.object.extend(fabric.StaticCanvas.prototype, /** @lends fabric.Stati
 
       this._setCenterToOrigin(t.target);
 
-      this.renderAll();
+      this.requestRenderAll();
       t.action = 'drag';
     },
 
@@ -17470,7 +17482,7 @@ fabric.util.object.extend(fabric.StaticCanvas.prototype, /** @lends fabric.Stati
       duration: this.FX_DURATION,
       onChange: function(value) {
         object.set('left', value);
-        _this.renderAll();
+        _this.requestRenderAll();
         onChange();
       },
       onComplete: function() {
@@ -17505,7 +17517,7 @@ fabric.util.object.extend(fabric.StaticCanvas.prototype, /** @lends fabric.Stati
       duration: this.FX_DURATION,
       onChange: function(value) {
         object.set('top', value);
-        _this.renderAll();
+        _this.requestRenderAll();
         onChange();
       },
       onComplete: function() {
@@ -17543,7 +17555,7 @@ fabric.util.object.extend(fabric.StaticCanvas.prototype, /** @lends fabric.Stati
       },
       onChange: function(value) {
         object.set('opacity', value);
-        _this.renderAll();
+        _this.requestRenderAll();
         onChange();
       },
       onComplete: function () {
@@ -21900,7 +21912,7 @@ fabric.util.object.extend(fabric.StaticCanvas.prototype, /** @lends fabric.Stati
    */
   straightenObject: function (object) {
     object.straighten();
-    this.renderAll();
+    this.requestRenderAll();
     return this;
   },
 
@@ -21912,7 +21924,7 @@ fabric.util.object.extend(fabric.StaticCanvas.prototype, /** @lends fabric.Stati
    */
   fxStraightenObject: function (object) {
     object.fxStraighten({
-      onChange: this.renderAll.bind(this)
+      onChange: this.requestRenderAll.bind(this)
     });
     return this;
   }
@@ -26791,7 +26803,7 @@ fabric.Image.filters.BaseFilter.fromObject = function(object, callback) {
       }
       this.canvas.fire('text:editing:entered', { target: this });
       this.initMouseMoveHandler();
-      this.canvas.renderAll();
+      this.canvas.requestRenderAll();
       return this;
     },
 
@@ -27078,7 +27090,7 @@ fabric.Image.filters.BaseFilter.fromObject = function(object, callback) {
       this.restartCursorIfNeeded();
       if (this.canvas) {
         this.canvas.fire('text:changed', { target: this });
-        this.canvas.renderAll();
+        this.canvas.requestRenderAll();
       }
     },
 
@@ -27677,7 +27689,7 @@ fabric.util.object.extend(fabric.IText.prototype, /** @lends fabric.IText.protot
       this.renderCursorOrSelection();
     }
     else {
-      this.canvas && this.canvas.renderAll();
+      this.canvas && this.canvas.requestRenderAll();
     }
   },
 
@@ -27700,7 +27712,7 @@ fabric.util.object.extend(fabric.IText.prototype, /** @lends fabric.IText.protot
     }
     e.stopImmediatePropagation();
     e.preventDefault();
-    this.canvas && this.canvas.renderAll();
+    this.canvas && this.canvas.requestRenderAll();
   },
 
   /**
@@ -28207,7 +28219,7 @@ fabric.util.object.extend(fabric.IText.prototype, /** @lends fabric.IText.protot
 
     this._removeExtraneousStyles();
 
-    this.canvas && this.canvas.renderAll();
+    this.canvas && this.canvas.requestRenderAll();
 
     this.setCoords();
     this.fire('changed');

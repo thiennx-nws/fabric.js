@@ -362,7 +362,7 @@
       }
       this.canvas.fire('text:editing:entered', { target: this });
       this.initMouseMoveHandler();
-      this.canvas.renderAll();
+      this.canvas.requestRenderAll();
       return this;
     },
 
@@ -649,7 +649,7 @@
       this.restartCursorIfNeeded();
       if (this.canvas) {
         this.canvas.fire('text:changed', { target: this });
-        this.canvas.renderAll();
+        this.canvas.requestRenderAll();
       }
     },
 
