@@ -15837,7 +15837,7 @@ fabric.util.object.extend(fabric.StaticCanvas.prototype, /** @lends fabric.Stati
    * @constant
    * @type Number
    */
-  fabric.Object.NUM_FRACTION_DIGITS = 2;
+  fabric.Object.NUM_FRACTION_DIGITS = 10;
 
   fabric.Object._fromObject = function(className, object, callback, forceAsync, extraParam) {
     var klass = fabric[className];

@@ -8325,7 +8325,7 @@ fabric.util.object.extend(fabric.StaticCanvas.prototype, {
     fabric.util.createAccessors(fabric.Object);
     fabric.Object.prototype.rotate = fabric.Object.prototype.setAngle;
     extend(fabric.Object.prototype, fabric.Observable);
-    fabric.Object.NUM_FRACTION_DIGITS = 2;
+    fabric.Object.NUM_FRACTION_DIGITS = 10;
     fabric.Object._fromObject = function(className, object, callback, forceAsync, extraParam) {
         var klass = fabric[className];
         object = clone(object, true);
